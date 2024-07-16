@@ -1,15 +1,43 @@
 export type microphone = { Id: string; Name: string };
+export enum MicrophoneState {
+  NotInitialized = "not initialized",
+  Initializing = "initializing",
+  NotSupported = "not supported",
+  Granted = "granted",
+  Denied = "denied",
+}
 export default class Microphone {
+  private _format = "audio/webm";
   private _mediaDevices: MediaDevices;
-  private _isMicSuportted: boolean;
-  private _isMicAllowed: boolean;
-  private _microphone: microphone;
+  private _isMicSuportted: boolean = false;
+  private _isMicAllowed: boolean = false;
+
+  private _microphone: microphone = null;
+
   private _microphoneList: microphone[] = [];
   private _constraints: MediaStreamConstraints;
   private _stream: MediaStream;
   private _onMicChangesCallback: () => void;
-  constructor(constrain: MediaStreamConstraints) {
+  private _onInit: Promise<void>;
+  private _microphoneState: MicrophoneState = MicrophoneState.NotInitialized;
+  private _mediaRecorder: MediaRecorder;
+  onDataAvailable: (blob: Blob) => void = null;
+  private _onMicrophoneStateChange: (state: MicrophoneState) => void;
+  constructor(
+    constrain: MediaStreamConstraints,
+    onMicrophoneStateChange: (state: MicrophoneState) => void
+  ) {
+    this._onMicrophoneStateChange = onMicrophoneStateChange;
     this._constraints = constrain;
+    const self = this;
+    this._setMicrophoneState(MicrophoneState.Initializing);
+    this._onInit = new Promise<void>(function (resolve, reject) {
+      self._setIsMicSuportted();
+      self._setIsMicAllowed().then(async function () {
+        self._setOnMicChanges();
+        resolve();
+      });
+    });
   }
 
   private _setIsMicSuportted(): void {
@@ -19,34 +47,88 @@ export default class Microphone {
     } else {
       console.error("microphone does not support in this browser");
       this._isMicSuportted = false;
+      this._setMicrophoneState(MicrophoneState.NotSupported);
     }
   }
-  private async _setIsMicAllowed(): Promise<void> {
+  private _setIsMicAllowed() {
     this._isMicAllowed = false;
+    const self = this;
+    return new Promise<void>(function (resolve, reject) {
+      if (self._isMicSuportted === true) {
+        if (!navigator.userAgent.includes("Firefox")) {
+          //get the mic id and put it in _microphone
+          //get the list of mic
+          const mic = "microphone" as PermissionName;
+          navigator.permissions
+            .query({
+              name: mic,
+            })
+            .then(function (result) {
+              if (result.state === "granted") {
+                self._isMicAllowed = true;
+                self._mediaDevices
+                  .getUserMedia({
+                    video: false,
+                    audio: true,
+                  })
+                  .then(async function (stream) {
+                    await self._setMicrophoneList();
+                    self._setMicrophoneState(MicrophoneState.Granted);
 
-    if (this._isMicSuportted === true) {
-      if (!navigator.userAgent.includes("Firefox")) {
-        const mic = "microphone" as PermissionName;
-        const result = await navigator.permissions.query({
-          name: mic,
-        });
-        if (result.state === "granted") {
-          this._isMicAllowed = true;
+                    const deviceId = stream
+                      .getAudioTracks()[0]
+                      .getSettings().deviceId;
+                    self.selectMic(deviceId);
+
+                    resolve();
+                  });
+
+                resolve();
+              } else {
+                self._isMicAllowed = false;
+                self._setMicrophoneState(MicrophoneState.Denied);
+
+                resolve();
+              }
+            });
         } else {
-          this._isMicAllowed = false;
-        }
-      } else {
-        try {
-          await this._mediaDevices.getUserMedia({
-            video: false,
-            audio: true,
-          });
-          this._isMicAllowed = true;
-        } catch (e) {
-          this._isMicAllowed = false;
+          try {
+            self._mediaDevices
+              .getUserMedia({
+                video: false,
+                audio: true,
+              })
+              .then(async function (stream) {
+                self._isMicAllowed = true;
+
+                await self._setMicrophoneList();
+                self._setMicrophoneState(MicrophoneState.Granted);
+                const deviceId = stream
+                  .getAudioTracks()[0]
+                  .getSettings().deviceId;
+                self.selectMic(deviceId);
+
+                resolve();
+              })
+              .catch(function () {
+                self._isMicAllowed = false;
+                self._setMicrophoneState(MicrophoneState.Denied);
+
+                resolve();
+              });
+          } catch (e) {
+            self._isMicAllowed = false;
+            self._setMicrophoneState(MicrophoneState.Denied);
+
+            resolve();
+          }
         }
       }
-    }
+    });
+  }
+  private _setMicrophoneState(state: MicrophoneState) {
+    this._microphoneState = state;
+    this._onMicrophoneStateChange(state);
   }
   private async _setMicrophoneList(): Promise<void> {
     this._microphoneList = [];
@@ -68,7 +150,7 @@ export default class Microphone {
       this._microphoneList = [];
     }
   }
-  private async _onMicChanges() {
+  private async _setOnMicChanges() {
     if (this._isMicSuportted) {
       const self = this;
       this._mediaDevices.addEventListener("devicechange", async function (e) {
@@ -77,18 +159,12 @@ export default class Microphone {
       });
     }
   }
-  async init() {
-    this._setIsMicSuportted();
-    await this._setIsMicAllowed();
-    await this._setMicrophoneList();
-    this._onMicChanges();
-  }
 
   setOnMicChangesCallback(callback: () => void) {
     this._onMicChangesCallback = callback;
   }
 
-  async getIsMicAllowed(): Promise<boolean> {
+  getIsMicAllowed() {
     if (this._isMicSuportted === false) return this._isMicAllowed;
 
     return this._isMicAllowed;
@@ -96,24 +172,54 @@ export default class Microphone {
   getAudioDevices() {
     return this._microphoneList;
   }
-  async selectMic(Id: String) {
-    let stream: MediaStream;
-    const mic = this._microphoneList.find((m) => m.Id === Id);
+  selectMic(Id: String) {
+    let mic = this._microphoneList.find((m) => m.Id === Id);
     if (mic === undefined) {
       console.error("mic with this id: " + Id + " is not available");
-      stream = await this._mediaDevices.getUserMedia(this._constraints);
+      mic = this._microphoneList[0];
+      console.log("selecting this mic: " + mic.Name + " instead");
+      this._microphone = mic;
     } else {
       this._microphone = mic;
-      const audio = this._constraints.audio as MediaTrackConstraints;
-      stream = await this._mediaDevices.getUserMedia({
-        ...this._constraints,
-        audio: { ...audio, deviceId: mic.Id },
-      });
     }
-    this._stream = stream;
   }
   getStream() {
     return this._stream;
+  }
+  startRecording() {
+    const self = this;
+
+    this._onInit.then(function () {
+      if (self._microphone === null || self._microphone === undefined) {
+        console.error("mic has not been selected");
+        const mic = self._microphoneList[0];
+        self.selectMic(mic.Id);
+        console.log("this mic:" + mic.Name + " has been selected instead");
+      }
+      const audio = self._constraints.audio as MediaTrackConstraints;
+      self._mediaDevices
+        .getUserMedia({
+          ...self._constraints,
+          audio: { ...audio, deviceId: self._microphone.Id },
+        })
+        .then(function (stream) {
+          self._stream = stream;
+          self._mediaRecorder = new MediaRecorder(stream, {
+            mimeType: self._format,
+          });
+          self._mediaRecorder.ondataavailable = function (event) {
+            if (self.onDataAvailable !== null) {
+              self.onDataAvailable(event.data);
+            }
+          };
+          self._mediaRecorder.start(0);
+        });
+    });
+  }
+  stopRecording() {
+    if (this._mediaRecorder !== null || this._mediaRecorder !== undefined) {
+      this._mediaRecorder.stop();
+    }
   }
 }
 

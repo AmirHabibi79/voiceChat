@@ -1,9 +1,5 @@
-export default function getNewAudioContext() {
-  const context = new AudioContext();
-  return context;
-}
 type audioContext = { Id: number; audioContext: AudioContext };
-export class AudioOutput {
+export default class AudioOutput {
   private _AudioContextList: audioContext[] = [];
   constructor() {}
   private _makeNewId() {
@@ -32,5 +28,16 @@ export class AudioOutput {
     }
     audioContext.audioContext.close();
     this._removeAudioContextById(Id);
+  }
+  getNewContext() {
+    return this._createNewAudioContext();
+  }
+  async playAudioFromArrayBuffer(data: ArrayBuffer) {
+    const audioContext = this._createNewAudioContext();
+    const buffer = await audioContext.audioContext.decodeAudioData(data);
+    const source = audioContext.audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContext.audioContext.destination);
+    source.start();
   }
 }
