@@ -1,0 +1,28 @@
+services:
+  server:
+    env_file:
+      - ./.env
+    build:
+      context: ./server/
+
+      args:
+        - CLIENT_PORT=${CLIENT_PORT}
+        - CLIENT_DOMAIN=${CLIENT_DOMAIN}
+        - IS_HTTPS=${IS_HTTPS}
+    ports:
+      - ${SERVER_PORT}:8080
+
+  client:
+    build:
+      context: ./client/
+      args:
+        - SERVER_DOMAIN=${SERVER_DOMAIN}
+        - SERVER_PORT=${SERVER_PORT}
+        - CLIENT_PORT=${CLIENT_PORT}
+        - IS_HTTPS=${IS_HTTPS}
+    depends_on:
+      - server
+    env_file:
+      - ./.env
+    ports:
+      - ${CLIENT_PORT}:80
