@@ -5,16 +5,23 @@
   "private": true,
   "scripts": {
     "watch": "webpack --watch",
-    "start": "webpack server --open",
-    "build": "webpack"
+    "serve": "./node_modules/.bin/http-server",
+    "dev": "webpack  serve --open --mode development  --env SERVER_DOMAIN=localhost --env SERVER_PORT=8080 --env IS_HTTPS=false --env CLIENT_PORT=8081 ",
+    "build": "webpack --mode production",
+    "start": "webpack serve --host 0.0.0.0 "
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/recordrtc": "^5.6.14",
+    "@types/signalr": "^2.4.3",
     "autoprefixer": "^10.4.19",
     "css-loader": "^7.1.2",
+    "dotenv-webpack": "^8.1.0",
     "html-webpack-plugin": "^5.6.0",
+    "html-webpack-tags-plugin": "^3.0.2",
+    "http-server": "^14.1.1",
     "postcss": "^8.4.39",
     "postcss-loader": "^8.1.1",
     "postcss-preset-env": "^9.5.16",
@@ -23,11 +30,15 @@
     "ts-loader": "^9.5.1",
     "typescript": "^5.5.3",
     "webpack": "^5.92.1",
+    "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.0.4"
+    "webpack-dev-server": "^5.0.4",
+    "webpack-merge": "^6.0.1"
   },
   "dependencies": {
+    "@microsoft/signalr": "^8.0.7",
     "htmx.org": "^1.9.12",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "recordrtc": "^5.6.2"
   }
 }
