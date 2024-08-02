@@ -12,14 +12,14 @@
     "http": {
       "commandName": "Project",
       "dotnetRunMessages": true,
-      "launchBrowser": true,
-      "launchUrl": "swagger",
       "applicationUrl": "http://localhost:5196",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "CLIENT_DOMAIN": "localhost",
         "CLIENT_PORT": "8080",
-        "IS_HTTPS": "false"
+        "IS_HTTPS": "false",
+        "ROOM_PER_SESSION": "10",
+        "USER_PER_ROOM": "10"
       }
     },
     "https": {
