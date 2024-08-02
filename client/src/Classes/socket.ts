@@ -3,7 +3,7 @@ import {
   HubConnectionBuilder,
   LogLevel,
 } from "@microsoft/signalr";
-import UI from "../ui";
+import UI from "./ui";
 import { ReceivedRoom, Room } from "../types";
 
 enum QueueCommand {
