@@ -33,11 +33,15 @@ export default class AudioOutput {
     return this._createNewAudioContext();
   }
   async playAudioFromArrayBuffer(data: ArrayBuffer) {
+    const self = this;
     const audioContext = this._createNewAudioContext();
     const buffer = await audioContext.audioContext.decodeAudioData(data);
     const source = audioContext.audioContext.createBufferSource();
     source.buffer = buffer;
     source.connect(audioContext.audioContext.destination);
     source.start();
+    source.onended = function (e) {
+      self.deleteAudioById(audioContext.Id);
+    };
   }
 }

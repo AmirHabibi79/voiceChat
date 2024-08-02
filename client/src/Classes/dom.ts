@@ -1,14 +1,32 @@
 export default class DOM {
   private _body: HTMLElement;
+  private _document: Document;
+
   constructor() {
     this._body = document.body;
+    this._document = document;
   }
   makeElement<T extends keyof HTMLElementTagNameMap>(element: T) {
     const newElement = document.createElement(element);
     return newElement;
   }
+  getElementByClass<T extends HTMLElement>(className: string) {
+    const element: T = this._document.querySelector("." + className);
+    return element;
+  }
   appendChild(parent: HTMLElement, child: HTMLElement) {
     parent.appendChild(child);
+  }
+  appendChildren(parent: HTMLElement, children: HTMLElement[]) {
+    children.forEach(function (child) {
+      parent.appendChild(child);
+    });
+  }
+  removeTextContent(element: HTMLElement) {
+    element.textContent = "";
+  }
+  removeElement(element: HTMLElement) {
+    element.remove();
   }
   getBody() {
     return this._body;
@@ -27,11 +45,5 @@ export default class DOM {
   }
   removeClassList<T extends HTMLElement>(element: T, classList: string[]) {
     element.classList.remove(...classList);
-  }
-  setOnClick<T extends HTMLElement>(
-    element: T,
-    onClick: (event: MouseEvent) => void
-  ) {
-    element.onclick = onClick;
   }
 }

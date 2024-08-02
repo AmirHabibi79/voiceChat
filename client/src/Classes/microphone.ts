@@ -21,6 +21,8 @@ export default class Microphone {
   private _onInit: Promise<void>;
   private _microphoneState: MicrophoneState = MicrophoneState.NotInitialized;
   private _mediaRecorder: MediaRecorder;
+  private _interval: NodeJS.Timeout;
+  private _isRecording: boolean = false;
   onDataAvailable: (blob: Blob) => void = null;
   private _onMicrophoneStateChange: (state: MicrophoneState) => void;
   constructor(
@@ -207,18 +209,33 @@ export default class Microphone {
           self._mediaRecorder = new MediaRecorder(stream, {
             mimeType: self._format,
           });
+
+          // setInterval(() => {
+          //   console.log(self._mediaRecorder.requestData());
+          // }, 100);
           self._mediaRecorder.ondataavailable = function (event) {
-            if (self.onDataAvailable !== null) {
-              self.onDataAvailable(event.data);
-            }
+            console.log(event.data.size);
+            if (event.data.size > 0)
+              if (self.onDataAvailable !== null) {
+                self.onDataAvailable(event.data);
+              }
           };
           self._mediaRecorder.start(0);
+          self._isRecording = true;
+          // self._startRecording();
+          // self._interval = setInterval(() => {
+          //   self._mediaRecorder.start(1000);
+          //   self._mediaRecorder.stop();
+          // }, 1000);
         });
     });
   }
   stopRecording() {
     if (this._mediaRecorder !== null || this._mediaRecorder !== undefined) {
+      this._isRecording = false;
       this._mediaRecorder.stop();
+      // clearInterval(this._interval);
+      // this._interval = null;
     }
   }
 }
