@@ -6,7 +6,7 @@
   "scripts": {
     "watch": "webpack --watch",
     "serve": "./node_modules/.bin/http-server",
-    "dev": "webpack  serve --open --mode development  --env SERVER_DOMAIN=localhost --env SERVER_PORT=8080 --env IS_HTTPS=false --env CLIENT_PORT=8081 ",
+    "dev": "webpack  serve --open --mode development  --env SERVER_DOMAIN=localhost --env SERVER_PORT=5196 --env IS_HTTPS=false --env ROOM_PER_SESSION=10 --env USER_PER_ROOM=10",
     "build": "webpack --mode production",
     "start": "webpack serve --host 0.0.0.0 "
   },
@@ -16,6 +16,7 @@
   "devDependencies": {
     "@types/recordrtc": "^5.6.14",
     "@types/signalr": "^2.4.3",
+    "@types/toastify-js": "^1.12.3",
     "autoprefixer": "^10.4.19",
     "css-loader": "^7.1.2",
     "dotenv-webpack": "^8.1.0",
@@ -38,6 +39,7 @@
   "dependencies": {
     "@microsoft/signalr": "^8.0.7",
     "lodash": "^4.17.21",
-    "recordrtc": "^5.6.2"
+    "recordrtc": "^5.6.2",
+    "toastify-js": "^1.12.0"
   }
 }
