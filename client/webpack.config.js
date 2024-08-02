@@ -31,6 +31,8 @@ module.exports = (env, args) => {
       new webpack.DefinePlugin({
         "process.env": {
           SERVER_URL,
+          ROOM_PER_SESSION: env.ROOM_PER_SESSION,
+          USER_PER_ROOM: env.USER_PER_ROOM,
         },
       }),
     ],

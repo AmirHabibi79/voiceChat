@@ -14,9 +14,14 @@ RUN dotnet add package Microsoft.AspNetCore.SignalR.Client
 ARG CLIENT_DOMAIN
 ARG CLIENT_PORT
 ARG IS_HTTPS
+ARG ROOM_PER_SESSION
+ARG USER_PER_ROOM
+
 RUN export CLIENT_DOMAIN=${CLIENT_DOMAIN}
 RUN export CLIENT_PORT=${CLIENT_PORT}
 RUN export IS_HTTPS=${IS_HTTPS}
+RUN export ROOM_PER_SESSION=${ROOM_PER_SESSION}
+RUN export USER_PER_ROOM=${USER_PER_ROOM}
 
 RUN dotnet publish -c release --property:PublishDir=/server --no-restore
 
